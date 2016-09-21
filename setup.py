@@ -16,7 +16,7 @@ setup(
     ],
     keywords='tarot',
     packages=['randomwaite'],
-    install_requires = ['flickrapi==2.1.2',],
+    install_requires = ['flickrapi==2.1.2', 'Pillow==3.3.1', 'tweepy==3.5.0'],
     include_package_data = True,
     entry_points = {
           'console_scripts': [
