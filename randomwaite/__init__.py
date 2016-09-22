@@ -1,3 +1,9 @@
+# TODO deal with loss of randomness
+# TODO reversed/inversed cards
+# TODO sentiment analysis of search words
+# TODO emoji suites
+# TODO twitter responding / celery queue
+
 import math
 import re
 import sys
@@ -43,11 +49,6 @@ Fill = t.Tuple[int]
 TitlePlacement = Enum('TitlePlacement', 'top bottom middle random')
 
 break_string_re = re.compile(' ')
-
-# TODO deal with loss of randomness
-# TODO reversed/inversed cards
-# TODO sentiment analysis of search words
-# TODO emoji suites
 
 def random_fill() -> Fill:
     return (
@@ -188,7 +189,7 @@ def main():
         flickr.authenticate_via_browser(perms='read')
 
     card = get_tarot_card()
-    photo = get_photo(flickr, card.search)
+    photo = get_photo(flickr, card.search_term)
 
     print('going to fetch {}'.format(photo.url))
 

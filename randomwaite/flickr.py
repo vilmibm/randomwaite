@@ -47,10 +47,9 @@ class Photo:
         return self._img_data
 
 
-def get_photo(flickr: FlickrAPI, search: t.Tuple[str]) -> Photo:
+def get_photo(flickr: FlickrAPI, search_term: str) -> Photo:
     # This will check title, description, and tags for the given word
-    search = choice(search)
-    result = flickr.photos.search(text=search, license=OK_LICENSES)
+    result = flickr.photos.search(text=search_term, license=OK_LICENSES)
 
     # TODO pull from more than the first page
     photos = result['photos']['photo']
