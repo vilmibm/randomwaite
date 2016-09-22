@@ -160,6 +160,9 @@ CARDS = [
               'lion', 'salamander', 'authority', 'finances', 'money',
               'finance', 'honesty', 'mediation', 'mediate', 'professional',
               'fire', 'desert')),
+]
+
+TODO = [
     # swords
     TarotCard('Ace of Swords', ('',)),
     TarotCard('Two of Swords', ('',)),
