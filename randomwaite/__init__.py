@@ -150,7 +150,6 @@ def place_title(card: TarotCard, im: Image) -> Image:
     if text_w < im.width:
         text_x += randrange(0, im.width - text_w)
 
-
     if position == TitlePlacement.top:
         text_y = 0
     elif position == TitlePlacement.middle:
@@ -165,7 +164,7 @@ def place_title(card: TarotCard, im: Image) -> Image:
     print(text_x, text_y, text_w, text_h)
 
     # actual drawing
-    d.rectangle((text_x, text_y, text_w, text_y+text_h+15), fill=random_fill())
+    d.rectangle((text_x, text_y, text_x+text_w, text_y+text_h+15), fill=random_fill())
     d.text((text_x, text_y),
            title,
            font=fnt,
