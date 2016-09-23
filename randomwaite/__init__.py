@@ -15,10 +15,10 @@ from random import choice, random, randrange
 
 import tweepy
 from flickrapi.core import FlickrAPI
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from . import secrets as sec
-from .cards import TarotCard, CARDS, get_tarot_card
+from .cards import TarotCard, draw_tarot_card
 from .flickr import get_photo
 
 DEBUG = True
@@ -177,6 +177,15 @@ def place_title(card: TarotCard, im: Image) -> Image:
 
     return out
 
+def maybe_inverse(card: TarotCard, im: Image) -> Image:
+    if not card.inverted:
+        return im
+
+    if random() < .7:
+        return im.rotate(180)
+    else:
+        return ImageOps.mirror(im)
+
 
 def main():
     flickr = FlickrAPI(sec.FLICKR_KEY, sec.FLICKR_SECRET, format='parsed-json')
@@ -188,12 +197,23 @@ def main():
         print('authenticating...')
         flickr.authenticate_via_browser(perms='read')
 
-    card = get_tarot_card()
+    card = draw_tarot_card()
+    if card.inverted:
+        print('drew inverted', card)
+    else:
+        print('drew', card)
+
+    search_term = card.search_term
+
+    print('searching for', search_term)
+
     photo = get_photo(flickr, card.search_term)
 
-    print('going to fetch {}'.format(photo.url))
+    print('going to fetch', photo.url)
 
     original = Image.open(photo.data)
+
+    print('processing image')
 
     # 1 Pick random section of image to cut card from
     im = random_crop(original)
@@ -206,11 +226,15 @@ def main():
 
     im = place_title(card, im)
 
+    im = maybe_inverse(card, im)
+
     if not DEBUG:
+        print('updating twitter...')
         buffer = BytesIO()
         im.save(buffer, format='JPEG')
         twitter.update_with_media('tarot.jpg', file=buffer)
     else:
+        print('saving to /tmp/tarot.jpg')
         im.save('/tmp/tarot.jpg')
 
     sys.exit(0)

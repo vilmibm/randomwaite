@@ -5,6 +5,15 @@ class Sentiment:
     def __str__(self) -> str:
         return 'Sentiment<{}>'.format(self._sentiment)
 
+    @property
+    def inverse(self) -> 'Sentiment':
+        if self._sentiment == 'positive':
+            return Sentiment('negative')
+        if self._sentiment == 'negative':
+            return Sentiment('positive')
+
+        return Sentiment('neutral')
+
     def invert(self) -> 'Sentiment':
         if self._sentiment == 'positive':
             return Sentiment('negative')

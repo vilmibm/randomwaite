@@ -1,13 +1,15 @@
 """Defines the TarotCard class and enumerates all of the cards. Exports them
 all in CARDS.
 """
-from random import choice
+from random import choice, random
 from typing import Tuple
 
 from .sentiment import Sentiment, NEGATIVE, POSITIVE, NEUTRAL
 
+INVERSE_CHANCE = .33
+
 class TarotCard:
-    __slots__ = ['name', 'keywords', 'sentiment', 'inversed']
+    __slots__ = ['name', 'keywords', 'sentiment', 'inverted']
 
     def __init__(self, name:str = 'Some Card',
                  keywords:Tuple[str] = ['some', 'card'],
@@ -15,14 +17,15 @@ class TarotCard:
         self.name = name
         self.keywords = keywords
         self.sentiment = sentiment
-        self.inversed = False
+        self.inverted = False
 
     @property
     def search_term(self) -> str:
         return choice(self.keywords)
 
     def invert(self) -> None:
-        self.inversed = not self.inversed
+        self.inverted = not self.inverted
+        self.sentiment = self.sentiment.inverse
 
     def __repr__(self):
         return '<TarotCard: {}>'.format(self.name)
@@ -30,148 +33,151 @@ class TarotCard:
     def __str__(self):
         return self.name
 
-def get_tarot_card() -> TarotCard:
-    return choice(CARDS)
+def draw_tarot_card() -> TarotCard:
+    card = TarotCard(**choice(CARD_DATA))
+    if random() < INVERSE_CHANCE:
+        print("inverting card...")
+        card.invert()
+
+    return card
 
 
-# TODO actually fill in search terms
-
-CARDS = [
+CARD_DATA = [
     # minor arcana
     # cups
-    TarotCard(name='Ace of Cups',
-              sentiment=POSITIVE,
-              keywords=('love', 'intimacy', 'feelings', 'compassion', 'beginning',
-                        'possibility', 'relationship', 'deeper', 'romantic',
-                        'friendship', 'seed', 'gift', 'opportunity', 'offer',)),
-    TarotCard(name='Two of Cups',
-              sentiment=POSITIVE,
-              keywords=('Partnerships', 'unions', 'energies', 'bond', 'Beauty', 'power',
-                        'electric', 'vibrations', 'romance', 'sexual', 'energy',
-                        'relationship', 'reconciliation', 'harmony', 'peace',)),
-    TarotCard(name='Three of Cups',
-              sentiment=POSITIVE,
-              keywords=('groups', 'together', 'goal', 'community', 'helping', 'caring',
-                        'organizations', 'social', 'services', 'support',)),
-    TarotCard(name='Four of Cups',
-              sentiment=NEUTRAL,
-              keywords=('reflection', 'inaction', 'quiet', 'deliberation',
-                        'contemplation', 'bad', 'undesirable', 'tribulation',
-                        'sacrifice', 'meditation', 'distraction', 'direction',
-                        'ignoring',)),
-    TarotCard(name='Five of Cups',
+    dict(name='Ace of Cups',
+         sentiment=POSITIVE,
+         keywords=('love', 'intimacy', 'feelings', 'compassion', 'beginning',
+                   'possibility', 'relationship', 'deeper', 'romantic',
+                   'friendship', 'seed', 'gift', 'opportunity', 'offer',)),
+    dict(name='Two of Cups',
+         sentiment=POSITIVE,
+         keywords=('Partnerships', 'unions', 'energies', 'bond', 'Beauty', 'power',
+                   'electric', 'vibrations', 'romance', 'sexual', 'energy',
+                   'relationship', 'reconciliation', 'harmony', 'peace',)),
+    dict(name='Three of Cups',
+         sentiment=POSITIVE,
+         keywords=('groups', 'together', 'goal', 'community', 'helping', 'caring',
+                   'organizations', 'social', 'services', 'support',)),
+    dict(name='Four of Cups',
+         sentiment=NEUTRAL,
+         keywords=('reflection', 'inaction', 'quiet', 'deliberation',
+                   'contemplation', 'bad', 'undesirable', 'tribulation',
+                   'sacrifice', 'meditation', 'distraction', 'direction',
+                   'ignoring',)),
+    dict(name='Five of Cups',
               sentiment=NEGATIVE,
               keywords=('emotional', 'dejection', 'disappointment', 'sorrow', 'failure',
                         'appreciate', 'time',)),
-    TarotCard(name='Six of Cups',
+    dict(name='Six of Cups',
               sentiment=POSITIVE,
               keywords=('innocence' 'nostalgia' 'provincial' 'rustic' 'simple'
                         'children' 'youth' 'love',)),
-    TarotCard(name='Seven of Cups',
+    dict(name='Seven of Cups',
               sentiment=NEUTRAL,
               keywords=('cloud' 'transient' 'impractical' 'imagination' 'wishful'
                         'thinking' 'delusion' 'choice' 'temptation' 'confusion',)),
-    TarotCard(name='Eight of Cups',
+    dict(name='Eight of Cups',
               sentiment=NEGATIVE,
               keywords=('breaking' 'cracking' 'splitting' 'leaving' 'disillusion'
                         'abandon' 'abandonment')),
-    TarotCard(name='Nine of Cups',
+    dict(name='Nine of Cups',
               sentiment=POSITIVE,
               keywords=('wish' 'fulfilled' 'fulfillment' 'goal' 'desire' 'satisfaction'
                         'satisfied' 'full' 'sated' 'smug' 'smugness' 'pleased' 'content'
                         'contentment' 'contented' 'luxurious' 'luxury',)),
-    TarotCard(name='Ten of Cups',
+    dict(name='Ten of Cups',
               sentiment=POSITIVE,
               keywords=('rainbow', 'town', 'country', 'local', 'contentment', 'content',
                         'love', 'friendship', 'friends', 'friend', 'trust', 'idyllic',
                         'ideal', 'peace',)),
-    TarotCard(name='Page of Cups',
+    dict(name='Page of Cups',
               sentiment=POSITIVE,
               keywords=('spiritual', 'arts', 'imagination', 'psychic', 'creative',
                         'creativity', 'youth', 'party',)),
-    TarotCard(name='Knight of Cups',
+    dict(name='Knight of Cups',
               sentiment=NEUTRAL,
               keywords=('change', 'excitement', 'exciting', 'changes', 'changing',
                         'excited', 'romantic', 'romance', 'love', 'invitation',
                         'opportunity', 'offer', 'offers', 'bored', 'stimulation',
                         'boring', 'bore',)),
-    TarotCard(name='Queen of Cups',
+    dict(name='Queen of Cups',
               sentiment=POSITIVE,
               keywords=('queen', 'virtue', 'golden', 'gold', 'mother', 'friend',
                         'throne',)),
-    TarotCard(name='King of Cups',
+    dict(name='King of Cups',
               sentiment=POSITIVE,
               keywords=('king', 'mature', 'throne', 'sceptre', 'heart', 'love', 'music',
               'art', 'sea', 'ocean', 'aid', 'mentor', 'teacher', 'healer',
               'gentle', 'patient', 'diplomacy',)),
     # wands
-    TarotCard(name='Ace of Wands',
+    dict(name='Ace of Wands',
               sentiment=NEUTRAL,
               keywords=('creation', 'invention', 'enterprise', 'principle', 'beginning',
                         'source', 'birth', 'family', 'origin', 'virility', 'enterprises',
                         'money', 'fortune', 'inheritance', 'commencement', 'creativity',
                         'invention', 'beginning')),
-    TarotCard(name='Two of Wands',
+    dict(name='Two of Wands',
               sentiment=NEUTRAL,
               keywords=('courage', 'daring', 'courageous', 'journey', 'journey',
                         'power', 'bold', 'boldness', 'brave', 'bravery', 'travel',)),
-    TarotCard(name='Three of Wands',
+    dict(name='Three of Wands',
               sentiment=POSITIVE,
               keywords=('sea', 'ocean', 'journey', 'creation', 'mission', 'optimism',
               'enterprise', 'commerce', 'trade', 'achievement', 'travel',)),
-    TarotCard(name='Four of Wands',
+    dict(name='Four of Wands',
               sentiment=POSITIVE,
               keywords=('harmony', 'positive', 'positivity', 'work', 'provincial',
               'haven', 'refuge', 'domestic', 'domesticity', 'concord',
               'harmony', 'peace', 'home', 'house', 'dwelling',)),
-    TarotCard(name='Five of Wands',
+    dict(name='Five of Wands',
               sentiment=NEGATIVE,
               keywords=('imitation', 'play', 'sham', 'struggle', 'fight', 'tussle',
                         'combat', 'acquisition', 'struggles', 'fighting', 'fights',
                         'warfare', 'conflict', 'anxiety', 'strife',)),
-    TarotCard(name='Six of Wands',
+    dict(name='Six of Wands',
               sentiment=POSITIVE,
               keywords=('organization', 'cleanliness', 'order', 'orderly',
                         'organizations', 'mobilization', 'success', 'triumph', 'victory',
                         'honor', 'competent', 'complete', 'completion',)),
-    TarotCard(name='Seven of Wands',
+    dict(name='Seven of Wands',
               sentiment=NEUTRAL,
               keywords=('striving', 'strive', 'protect', 'fence', 'cope', 'coping',
                         'resistance', 'resist', 'resisting', 'perseverance', 'strength',
                         'tenacity', 'courage',)),
-    TarotCard(name='Eight of Wands',
+    dict(name='Eight of Wands',
               sentiment=NEUTRAL,
               keywords=('action', 'swift', 'swiftness', 'speed', 'quick', 'quickness',
                         'journey', 'flight', 'flying', 'fly', 'motion', 'haste', 'hasty',
                         'communication', 'communicate', 'telecommunications', 'news',
                         'information', 'data',)),
-    TarotCard(name='Nine of Wands',
+    dict(name='Nine of Wands',
               sentiment=POSITIVE,
               keywords=('order', 'discipline', 'protected', 'protect', 'fence', 'wall',
               'castle', 'unassailable', 'health', 'wellbeing', 'stability',
               'tenacity', 'tenacious',)),
-    TarotCard(name='Ten of Wands',
+    dict(name='Ten of Wands',
               sentiment=NEGATIVE,
               keywords=('overload', 'overloaded', 'exhausted', 'burden', 'burdened',
                         'exhaustion', 'tired', 'overwork', 'work', 'responsibility',)),
-    TarotCard(name='Page of Wands',
+    dict(name='Page of Wands',
               sentiment=NEUTRAL,
               keywords=('adventure', 'adventurous', 'ambition', 'ambitious',
                         'energetic', 'active', 'skill', 'skilled', 'drive', 'progress',
                         'grow', 'growth', 'move', 'moving', 'enthusiasm', 'messenger',
                         'message',)),
-    TarotCard(name='Knight of Wands',
+    dict(name='Knight of Wands',
               sentiment=POSITIVE,
               keywords=('travel', 'progress', 'traveling', 'idea', 'ideas',
                         'inventions', 'forward', 'knowledge', 'battle', 'instinct',
                         'intuition', 'creativity', 'journey',)),
-    TarotCard(name='Queen of Wands',
+    dict(name='Queen of Wands',
               sentiment=NEUTRAL,
               keywords=('queen', 'throne', 'nurture', 'nurturing', 'feminine',
                         'vivacious', 'intensity', 'fire', 'toughness', 'independence',
                         'sunflower', 'spontaneous', 'chaste', 'chastity', 'helpful',
                         'mother', 'help', 'giving', 'panther')),
-    TarotCard(name='King of Wands',
+    dict(name='King of Wands',
               sentiment=NEUTRAL,
               keywords=('king', 'throne', 'passion', 'mature', 'infinite', 'infinity',
                         'lion', 'salamander', 'authority', 'finances', 'money',
@@ -179,58 +185,59 @@ CARDS = [
                         'fire', 'desert')),
 ]
 
+# TODO actually fill in search terms
 TODO = [
     # pentacles
-    TarotCard(name='Ace of Pentacles', keywords=('',)),
-    TarotCard(name='Two of Pentacles', keywords=('',)),
-    TarotCard(name='Three of Pentacles', keywords=('',)),
-    TarotCard(name='Four of Pentacles', keywords=('',)),
-    TarotCard(name='Five of Pentacles', keywords=('',)),
-    TarotCard(name='Six of Pentacles', keywords=('',)),
-    TarotCard(name='Seven of Pentacles', keywords=('',)),
-    TarotCard(name='Eight of Pentacles', keywords=('',)),
-    TarotCard(name='Nine of Pentacles', keywords=('',)),
-    TarotCard(name='Ten of Pentacles', keywords=('',)),
-    TarotCard(name='Page of Pentacles', keywords=('',)),
-    TarotCard(name='Knight of Pentacles', keywords=('',)),
-    TarotCard(name='Queen of Pentacles', keywords=('',)),
-    TarotCard(name='King of Pentacles', keywords=('',)),
+    dict(name='Ace of Pentacles', keywords=('',)),
+    dict(name='Two of Pentacles', keywords=('',)),
+    dict(name='Three of Pentacles', keywords=('',)),
+    dict(name='Four of Pentacles', keywords=('',)),
+    dict(name='Five of Pentacles', keywords=('',)),
+    dict(name='Six of Pentacles', keywords=('',)),
+    dict(name='Seven of Pentacles', keywords=('',)),
+    dict(name='Eight of Pentacles', keywords=('',)),
+    dict(name='Nine of Pentacles', keywords=('',)),
+    dict(name='Ten of Pentacles', keywords=('',)),
+    dict(name='Page of Pentacles', keywords=('',)),
+    dict(name='Knight of Pentacles', keywords=('',)),
+    dict(name='Queen of Pentacles', keywords=('',)),
+    dict(name='King of Pentacles', keywords=('',)),
     # swords
-    TarotCard(name='Ace of Swords', keywords=('',)),
-    TarotCard(name='Two of Swords', keywords=('',)),
-    TarotCard(name='Three of Swords', keywords=('',)),
-    TarotCard(name='Four of Swords', keywords=('',)),
-    TarotCard(name='Five of Swords', keywords=('',)),
-    TarotCard(name='Six of Swords', keywords=('',)),
-    TarotCard(name='Seven of Swords', keywords=('',)),
-    TarotCard(name='Eight of Swords', keywords=('',)),
-    TarotCard(name='Nine of Swords', keywords=('',)),
-    TarotCard(name='Ten of Swords', keywords=('',)),
-    TarotCard(name='Page of Swords', keywords=('',)),
-    TarotCard(name='Knight of Swords', keywords=('',)),
-    TarotCard(name='Queen of Swords', keywords=('',)),
-    TarotCard(name='King of Swords', keywords=('',)),
+    dict(name='Ace of Swords', keywords=('',)),
+    dict(name='Two of Swords', keywords=('',)),
+    dict(name='Three of Swords', keywords=('',)),
+    dict(name='Four of Swords', keywords=('',)),
+    dict(name='Five of Swords', keywords=('',)),
+    dict(name='Six of Swords', keywords=('',)),
+    dict(name='Seven of Swords', keywords=('',)),
+    dict(name='Eight of Swords', keywords=('',)),
+    dict(name='Nine of Swords', keywords=('',)),
+    dict(name='Ten of Swords', keywords=('',)),
+    dict(name='Page of Swords', keywords=('',)),
+    dict(name='Knight of Swords', keywords=('',)),
+    dict(name='Queen of Swords', keywords=('',)),
+    dict(name='King of Swords', keywords=('',)),
     # major arcana
-    TarotCard(name='The Tower', keywords=('',)),
-    TarotCard(name='The Star', keywords=('',)),
-    TarotCard(name='The Hermit', keywords=('',)),
-    TarotCard(name='The Fool', keywords=('',)),
-    TarotCard(name='The Devil', keywords=('',)),
-    TarotCard(name='Temperance', keywords=('',)),
-    TarotCard(name='The Sun', keywords=('',)),
-    TarotCard(name='The Chariot', keywords=('',)),
-    TarotCard(name='Strength', keywords=('',)),
-    TarotCard(name='The High Priestess', keywords=('',)),
-    TarotCard(name='The Moon', keywords=('',)),
-    TarotCard(name='The World', keywords=('',)),
-    TarotCard(name='The Lovers', keywords=('',)),
-    TarotCard(name='The Magician', keywords=('',)),
-    TarotCard(name='The Empress', keywords=('',)),
-    TarotCard(name='The Emperor', keywords=('',)),
-    TarotCard(name='Justice', keywords=('',)),
-    TarotCard(name='The Hierophant', keywords=('',)),
-    TarotCard(name='Judgement', keywords=('',)),
-    TarotCard(name='Wheel of Fortune', keywords=('',)),
-    TarotCard(name='Death', keywords=('death',)),
-    TarotCard(name='The Hanged Man', keywords=('',)),
+    dict(name='The Tower', keywords=('',)),
+    dict(name='The Star', keywords=('',)),
+    dict(name='The Hermit', keywords=('',)),
+    dict(name='The Fool', keywords=('',)),
+    dict(name='The Devil', keywords=('',)),
+    dict(name='Temperance', keywords=('',)),
+    dict(name='The Sun', keywords=('',)),
+    dict(name='The Chariot', keywords=('',)),
+    dict(name='Strength', keywords=('',)),
+    dict(name='The High Priestess', keywords=('',)),
+    dict(name='The Moon', keywords=('',)),
+    dict(name='The World', keywords=('',)),
+    dict(name='The Lovers', keywords=('',)),
+    dict(name='The Magician', keywords=('',)),
+    dict(name='The Empress', keywords=('',)),
+    dict(name='The Emperor', keywords=('',)),
+    dict(name='Justice', keywords=('',)),
+    dict(name='The Hierophant', keywords=('',)),
+    dict(name='Judgement', keywords=('',)),
+    dict(name='Wheel of Fortune', keywords=('',)),
+    dict(name='Death', keywords=('death',)),
+    dict(name='The Hanged Man', keywords=('',)),
 ]
