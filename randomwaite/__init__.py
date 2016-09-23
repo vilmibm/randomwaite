@@ -21,6 +21,53 @@ from . import secrets as sec
 from .cards import TarotCard, draw_tarot_card
 from .flickr import get_photo
 
+
+"""
+So, for glitching, I read through ImageEnhance, ImageFilter, and ImageOps
+modules. There's a bunch of operations and I will use combinations of these,
+before and after applying the title (fewer after).
+
+I don't have a solid plan yet for how to actually use all these neat things.
+I've tested them all in the repl and they're making sense; it's just time to
+start scripting them.
+
+I'd really like to have the glitching (this isn't really glitching frankly but
+meh) tied to the meaning of the card / its sentiment but am not sure how
+possible this is...
+
+for the pre-title and post-title operations, i would be picking 0-3 operations.
+The sentiment related operations all happen pre-title.
+
+generic pre-title operations:
+ * blur
+ * find edges
+ * contour
+ * emboss
+ * detail
+ * invert
+
+negative sentiment:
+ 1 delete a color band
+ 2 grayscale
+ 3 posterize
+
+neutral sentiment:
+ 1 posterize slightly
+
+positive sentiment:
+ 1 increase brightness
+ 2 maxfilter
+
+generic post-title operations:
+ * blur
+ * edge_enhance
+ * edge_enhance_more
+ * detail
+ * invert
+
+"""
+
+
 DEBUG = True
 CARD_WIDTH = 385
 CARD_HEIGHT = 666
@@ -97,25 +144,10 @@ def maybe_zoom(original: Image) -> Image:
 
     return random_crop(resized)
 
+
 def color_balance(card: TarotCard, original: Image) -> Image:
     # TODO
     return original
-
-def row_shift(original: Image) -> Image:
-    # TODO this doesn't work
-    row_height = 5
-    max_x = original.width
-    max_y = original.height
-    for y0 in xrange(0, max_y - row_height):
-        row_box = (0, max_x, y0, y0 + rpw_height)
-        row = original.crop(row_box)
-        shifted = row.crop((0, max_x - 10, 0, row.height))
-        original.paste(shifted, row_box)
-
-
-def get_font_path() -> str:
-    # TODO perhaps take a card and tie font to card
-    return path.join(FONT_PATH, choice(FONTS))
 
 
 def place_title(card: TarotCard, im: Image) -> Image:
