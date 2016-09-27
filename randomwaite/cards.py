@@ -71,21 +71,21 @@ CARD_DATA = [
                         'appreciate', 'time',)),
     dict(name='Six of Cups',
               sentiment=POSITIVE,
-              keywords=('innocence' 'nostalgia' 'provincial' 'rustic' 'simple'
-                        'children' 'youth' 'love',)),
+              keywords=('innocence', 'nostalgia', 'provincial', 'rustic', 'simple',
+                        'children', 'youth', 'love',)),
     dict(name='Seven of Cups',
               sentiment=NEUTRAL,
-              keywords=('cloud' 'transient' 'impractical' 'imagination' 'wishful'
-                        'thinking' 'delusion' 'choice' 'temptation' 'confusion',)),
+              keywords=('cloud', 'transient', 'impractical', 'imagination', 'wishful',
+                        'thinking', 'delusion', 'choice', 'temptation', 'confusion',)),
     dict(name='Eight of Cups',
               sentiment=NEGATIVE,
-              keywords=('breaking' 'cracking' 'splitting' 'leaving' 'disillusion'
-                        'abandon' 'abandonment')),
+              keywords=('breaking', 'cracking', 'splitting', 'leaving', 'disillusion',
+                        'abandon', 'abandonment',)),
     dict(name='Nine of Cups',
               sentiment=POSITIVE,
-              keywords=('wish' 'fulfilled' 'fulfillment' 'goal' 'desire' 'satisfaction'
-                        'satisfied' 'full' 'sated' 'smug' 'smugness' 'pleased' 'content'
-                        'contentment' 'contented' 'luxurious' 'luxury',)),
+              keywords=('wish', 'fulfilled', 'fulfillment', 'goal', 'desire', 'satisfaction',
+                        'satisfied', 'full', 'sated', 'smug', 'smugness', 'pleased', 'content',
+                        'contentment', 'contented', 'luxurious', 'luxury',)),
     dict(name='Ten of Cups',
               sentiment=POSITIVE,
               keywords=('rainbow', 'town', 'country', 'local', 'contentment', 'content',

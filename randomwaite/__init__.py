@@ -16,6 +16,7 @@ from random import choice, random, randrange
 import tweepy
 from flickrapi.core import FlickrAPI
 from PIL import Image, ImageDraw, ImageFont, ImageOps
+from pixelsorter.sort import sort_image
 
 from . import secrets as sec
 from .cards import TarotCard, draw_tarot_card
@@ -73,7 +74,7 @@ CARD_WIDTH = 385
 CARD_HEIGHT = 666
 ZOOM_CHANCE = .25
 FONT_PATH = path.join(path.dirname(__file__), 'fonts')
-FONTS = ['CantataOne-Regular.ttf']
+FONTS = ['cantata.ttf', 'vcr.ttf']
 ROMAN_TABLE = {
     'two': 'ii',
     'three': 'iii',
@@ -97,9 +98,8 @@ TitlePlacement = Enum('TitlePlacement', 'top bottom middle random')
 
 break_string_re = re.compile(' ')
 
-def random_fill() -> Fill:
+def random_color() -> Fill:
     return (
-        randrange(0,255),
         randrange(0,255),
         randrange(0,255),
         randrange(0,255),
@@ -122,6 +122,9 @@ def random_crop(original: Image) -> Image:
     print('max x0', max_x0)
     print('min y0', min_y0)
     print('max y0', max_y0)
+
+    if max_y0 < 0:
+        raise Exception('Got weird image')
 
     x0 = choice(range(min_x0, max_x0))
     y0 = choice(range(min_y0, max_y0))
@@ -149,6 +152,10 @@ def color_balance(card: TarotCard, original: Image) -> Image:
     # TODO
     return original
 
+def get_font_path() -> str:
+    # TODO perhaps take a card and tie font to card
+    return path.join(FONT_PATH, choice(FONTS))
+
 
 def place_title(card: TarotCard, im: Image) -> Image:
     # boilerplate
@@ -171,7 +178,10 @@ def place_title(card: TarotCard, im: Image) -> Image:
         title = maybe_romanize(title)
 
     if random() < .6:
-        title = title.lower()
+        if random() < .5:
+            title = title.lower()
+        else:
+            title = title.upper()
 
     # check to see if we'd go out of bounds and split text if so
     if d.textsize(title, fnt)[0] > im.width:
@@ -197,11 +207,16 @@ def place_title(card: TarotCard, im: Image) -> Image:
     print(text_x, text_y, text_w, text_h)
 
     # actual drawing
-    d.rectangle((text_x, text_y, text_x+text_w, text_y+text_h+15), fill=random_fill())
+    text_fill = random_color()
+    text_r,text_g,text_b = text_fill
+    background_fill = map(lambda i: 255 - i, text_fill)
+    bg_r, bg_g, bg_b = background_fill
+
+    d.rectangle((0, text_y, im.width, text_y+text_h+15), fill=(text_r,text_g,text_b,128))
     d.text((text_x, text_y),
            title,
            font=fnt,
-           fill=random_fill(),
+           fill=(bg_r, bg_g, bg_b, 128),
            spacing=1,
            align=align)
 
@@ -217,6 +232,13 @@ def maybe_inverse(card: TarotCard, im: Image) -> Image:
         return im.rotate(180)
     else:
         return ImageOps.mirror(im)
+
+def sort_pixels(im: Image) -> Image:
+    pixels = list(im.getdata())
+    outpixels = sort_image(pixels, im.size, max_interval=15, randomize=True)
+    output = Image.new(im.mode, im.size)
+    output.putdata(outpixels)
+    return output
 
 
 def main():
@@ -255,6 +277,8 @@ def main():
 
     # 3 modify color balance (based on card)
     im = color_balance(card, im)
+
+    im = sort_pixels(im)
 
     im = place_title(card, im)
 
