@@ -6,7 +6,7 @@ from typing import Tuple
 
 from .sentiment import Sentiment, NEGATIVE, POSITIVE, NEUTRAL
 
-INVERSE_CHANCE = .33
+INVERSE_CHANCE = .1
 
 class TarotCard:
     __slots__ = ['name', 'keywords', 'sentiment', 'inverted']

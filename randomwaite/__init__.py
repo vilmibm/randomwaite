@@ -255,19 +255,15 @@ def posterize(bits: int, im: Image) -> Image:
 
 def brighten(im: Image) -> Image:
     enbrightener = ImageEnhance.Brightness(im)
-    return enbrightener.enhance(10)
-
-def maxfilter(im: Image) -> Image:
-    max_filter = ImageFilter.MaxFilter(size=3)
-    return im.filter(max_filter)
+    return enbrightener.enhance(1.4)
 
 PRE_TITLE_DISTORT = [blur, sort_pixels, find_edges, contour, emboss, detail, invert]
-POST_TITLE_DISTORT = [blur, edge_enhance, edge_enhance_more, detail, invert]
+POST_TITLE_DISTORT = [blur, edge_enhance, detail, invert, sort_pixels]
 
 def process_sentiment(card: TarotCard, im: Image) -> Image:
     """To be called prior to title placement."""
+    print('PROCESSING A {} SENTIMENT'.format(card.sentiment))
     if card.sentiment == NEGATIVE:
-        import ipdb; ipdb.set_trace()
         # first, replace a color band with black
         bands = im.split()
         bye_band = choice([0,1,2])
@@ -277,7 +273,7 @@ def process_sentiment(card: TarotCard, im: Image) -> Image:
 
         return posterize(4, grayscale(im))
     elif card.sentiment == POSITIVE:
-        return maxfilter(brighten(im))
+        return brighten(im)
     else:
         return posterize(7, im)
 
@@ -321,23 +317,28 @@ def main():
     # TODO distort before or after sort_pixels?
     im = process_sentiment(card, im)
 
-    print('SORTING')
-    im = sort_pixels(im)
+    #print('SORTING')
+    #im = sort_pixels(im)
 
-    print('PRE-TITLE DISTORTING', im)
-    for i in range(0, randint(1,3)):
-        im = im.convert('RGB')
-        im = choice(PRE_TITLE_DISTORT)(im)
+    pre_distort = choice(PRE_TITLE_DISTORT)
+    print('PRE-TITLE DISTORTING', im, pre_distort)
+    im = im.convert('RGB')
+    im = pre_distort(im)
 
     print('PLACING TITLE')
     im = place_title(card, im)
 
     im = maybe_inverse(card, im)
 
-    print('POST-TITLE DISTORTING', im)
-    for i in range(0, randint(1,2)):
-        im = im.convert('RGB')
-        im = choice(POST_TITLE_DISTORT)(im)
+    first_post_distort = choice(POST_TITLE_DISTORT)
+    second_post_distort = choice(POST_TITLE_DISTORT)
+    while second_post_distort == first_post_distort:
+        second_post_distort = choice(POST_TITLE_DISTORT)
+    print('POST-TITLE DISTORTING', im, first_post_distort, second_post_distort)
+    im = im.convert('RGB')
+    im = first_post_distort(im)
+    im = im.convert('RGB')
+    im = second_post_distort(im)
 
     if not DEBUG:
         print('updating twitter...')
