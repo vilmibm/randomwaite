@@ -9,6 +9,7 @@ import re
 import sys
 import typing as t
 from enum import Enum
+from functools import partial
 from io import BytesIO
 from os import path
 from random import choice, random, randrange, randint
@@ -49,7 +50,28 @@ CARD_WIDTH = 385
 CARD_HEIGHT = 666
 ZOOM_CHANCE = .25
 FONT_PATH = path.join(path.dirname(__file__), 'fonts')
-FONTS = ['cantata.ttf', 'vcr.ttf']
+FONTS = [
+    'alegreya.ttf',
+    'antic_didone.ttf',
+    'Cinzel.ttf',
+    'juliussans.ttf',
+    'oswald.ttf',
+    'vcr.ttf',
+    'amatica.ttf',
+    'bree.ttf',
+    'cormorant_infant.ttf',
+    'imfell.ttf',
+    'lobster.ttf',
+    'palanquin.ttf',
+    'vt323.ttf',
+    'amethysta.ttf',
+    'cantata.ttf',
+    'cutive.ttf',
+    'jacques.ttf',
+    'nothing.ttf',
+    'tangerine.ttf',
+]
+
 ROMAN_TABLE = {
     'two': 'ii',
     'three': 'iii',
@@ -98,7 +120,7 @@ def random_crop(original: Image) -> Image:
     print('min y0', min_y0)
     print('max y0', max_y0)
 
-    if max_y0 < 0:
+    if max_y0 <= 0 or max_x0 <= 0:
         raise Exception('Got weird image')
 
     x0 = choice(range(min_x0, max_x0))
@@ -140,6 +162,7 @@ def place_title(card: TarotCard, im: Image) -> Image:
     align = choice(TITLE_ALIGNS)
     im = im.convert('RGBA')
     font_path = get_font_path()
+    print('USING FONT, font_path')
     fnt = ImageFont.truetype(font_path, TITLE_SIZES[size])
     txt = Image.new('RGBA', im.size, (0,0,0,0))
     d = ImageDraw.Draw(txt)
@@ -215,10 +238,10 @@ def maybe_inverse(card: TarotCard, im: Image) -> Image:
     else:
         return ImageOps.mirror(im)
 
-def sort_pixels(im: Image) -> Image:
+def sort_pixels(max_interval:int, im: Image) -> Image:
     # TODO random angle, or at least diagonal chance
     pixels = list(im.getdata())
-    outpixels = sort_image(pixels, im.size, max_interval=15, randomize=True)
+    outpixels = sort_image(pixels, im.size, max_interval=max_interval, randomize=True)
     output = Image.new(im.mode, im.size)
     output.putdata(outpixels)
     return output
@@ -257,8 +280,8 @@ def brighten(im: Image) -> Image:
     enbrightener = ImageEnhance.Brightness(im)
     return enbrightener.enhance(1.4)
 
-PRE_TITLE_DISTORT = [blur, sort_pixels, find_edges, contour, emboss, detail, invert]
-POST_TITLE_DISTORT = [blur, edge_enhance, detail, invert, sort_pixels]
+PRE_TITLE_DISTORT = [blur, partial(sort_pixels, 15), find_edges, contour, emboss, detail, invert]
+POST_TITLE_DISTORT = [blur, edge_enhance, detail, invert, partial(sort_pixels, 5)]
 
 def process_sentiment(card: TarotCard, im: Image) -> Image:
     """To be called prior to title placement."""
