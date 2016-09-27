@@ -11,41 +11,20 @@ import typing as t
 from enum import Enum
 from io import BytesIO
 from os import path
-from random import choice, random, randrange
+from random import choice, random, randrange, randint
 
 import tweepy
 from flickrapi.core import FlickrAPI
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageFilter, ImageEnhance
 from pixelsorter.sort import sort_image
 
 from . import secrets as sec
 from .cards import TarotCard, draw_tarot_card
 from .flickr import get_photo
+from .sentiment import POSITIVE, NEGATIVE
 
 
 """
-So, for glitching, I read through ImageEnhance, ImageFilter, and ImageOps
-modules. There's a bunch of operations and I will use combinations of these,
-before and after applying the title (fewer after).
-
-I don't have a solid plan yet for how to actually use all these neat things.
-I've tested them all in the repl and they're making sense; it's just time to
-start scripting them.
-
-I'd really like to have the glitching (this isn't really glitching frankly but
-meh) tied to the meaning of the card / its sentiment but am not sure how
-possible this is...
-
-for the pre-title and post-title operations, i would be picking 0-3 operations.
-The sentiment related operations all happen pre-title.
-
-generic pre-title operations:
- * blur
- * find edges
- * contour
- * emboss
- * detail
- * invert
 
 negative sentiment:
  1 delete a color band
@@ -59,17 +38,13 @@ positive sentiment:
  1 increase brightness
  2 maxfilter
 
-generic post-title operations:
- * blur
- * edge_enhance
- * edge_enhance_more
- * detail
- * invert
-
 """
 
 
 DEBUG = True
+R = 0
+G = 1
+B = 2
 CARD_WIDTH = 385
 CARD_HEIGHT = 666
 ZOOM_CHANCE = .25
@@ -212,11 +187,18 @@ def place_title(card: TarotCard, im: Image) -> Image:
     background_fill = map(lambda i: 255 - i, text_fill)
     bg_r, bg_g, bg_b = background_fill
 
-    d.rectangle((0, text_y, im.width, text_y+text_h+15), fill=(text_r,text_g,text_b,128))
+    #d.rectangle((0, text_y, im.width, text_y+text_h+15), fill=(text_r,text_g,text_b,128))
+    #d.text((text_x, text_y),
+    #       title,
+    #       font=fnt,
+    #       fill=(bg_r, bg_g, bg_b, 128),
+    #       spacing=1,
+    #       align=align)
+    d.rectangle((0, text_y, im.width, text_y+text_h+15), fill=(0,0,0,255))
     d.text((text_x, text_y),
            title,
            font=fnt,
-           fill=(bg_r, bg_g, bg_b, 128),
+           fill=(255,255,255,255),
            spacing=1,
            align=align)
 
@@ -234,12 +216,70 @@ def maybe_inverse(card: TarotCard, im: Image) -> Image:
         return ImageOps.mirror(im)
 
 def sort_pixels(im: Image) -> Image:
+    # TODO random angle, or at least diagonal chance
     pixels = list(im.getdata())
     outpixels = sort_image(pixels, im.size, max_interval=15, randomize=True)
     output = Image.new(im.mode, im.size)
     output.putdata(outpixels)
     return output
 
+def blur(im: Image) -> Image:
+    return im.filter(ImageFilter.BLUR)
+
+def find_edges(im: Image) -> Image:
+    return im.filter(ImageFilter.FIND_EDGES)
+
+def contour(im: Image) -> Image:
+    return im.filter(ImageFilter.CONTOUR)
+
+def emboss(im: Image) -> Image:
+    return im.filter(ImageFilter.EMBOSS)
+
+def detail(im: Image) -> Image:
+    return im.filter(ImageFilter.DETAIL)
+
+def invert(im: Image) -> Image:
+    return ImageOps.invert(im)
+
+def edge_enhance(im: Image) -> Image:
+    return im.filter(ImageFilter.EDGE_ENHANCE)
+
+def edge_enhance_more(im: Image) -> Image:
+    return im.filter(ImageFilter.EDGE_ENHANCE_MORE)
+
+def grayscale(im: Image) -> Image:
+    return ImageOps.grayscale(im)
+
+def posterize(bits: int, im: Image) -> Image:
+    return ImageOps.posterize(im, bits)
+
+def brighten(im: Image) -> Image:
+    enbrightener = ImageEnhance.Brightness(im)
+    return enbrightener.enhance(10)
+
+def maxfilter(im: Image) -> Image:
+    max_filter = ImageFilter.MaxFilter(size=3)
+    return im.filter(max_filter)
+
+PRE_TITLE_DISTORT = [blur, sort_pixels, find_edges, contour, emboss, detail, invert]
+POST_TITLE_DISTORT = [blur, edge_enhance, edge_enhance_more, detail, invert]
+
+def process_sentiment(card: TarotCard, im: Image) -> Image:
+    """To be called prior to title placement."""
+    if card.sentiment == NEGATIVE:
+        import ipdb; ipdb.set_trace()
+        # first, replace a color band with black
+        bands = im.split()
+        bye_band = choice([0,1,2])
+        black_band = bands[bye_band].point(lambda _: 0)
+        bands[bye_band].paste(black_band)
+        im = Image.merge(im.mode, bands)
+
+        return posterize(4, grayscale(im))
+    elif card.sentiment == POSITIVE:
+        return maxfilter(brighten(im))
+    else:
+        return posterize(7, im)
 
 def main():
     flickr = FlickrAPI(sec.FLICKR_KEY, sec.FLICKR_SECRET, format='parsed-json')
@@ -278,11 +318,26 @@ def main():
     # 3 modify color balance (based on card)
     im = color_balance(card, im)
 
+    # TODO distort before or after sort_pixels?
+    im = process_sentiment(card, im)
+
+    print('SORTING')
     im = sort_pixels(im)
 
+    print('PRE-TITLE DISTORTING', im)
+    for i in range(0, randint(1,3)):
+        im = im.convert('RGB')
+        im = choice(PRE_TITLE_DISTORT)(im)
+
+    print('PLACING TITLE')
     im = place_title(card, im)
 
     im = maybe_inverse(card, im)
+
+    print('POST-TITLE DISTORTING', im)
+    for i in range(0, randint(1,2)):
+        im = im.convert('RGB')
+        im = choice(POST_TITLE_DISTORT)(im)
 
     if not DEBUG:
         print('updating twitter...')
