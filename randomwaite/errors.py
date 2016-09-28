@@ -1,0 +1,2 @@
+class TinyImageException(Exception):
+    pass

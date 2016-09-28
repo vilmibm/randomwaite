@@ -14,6 +14,7 @@ from . import secrets as sec
 from .cards import TarotCard, draw_tarot_card
 from .flickr import get_photo
 from .sentiment import POSITIVE, NEGATIVE
+from .errors import TinyImageException
 
 R = 0
 G = 1
@@ -87,7 +88,7 @@ def random_crop(original: Image) -> Image:
     print('max y0', max_y0)
 
     if max_y0 <= 0 or max_x0 <= 0:
-        raise Exception('Got weird image')
+        raise TinyImageException()
 
     x0 = choice(range(min_x0, max_x0))
     y0 = choice(range(min_y0, max_y0))
@@ -270,7 +271,7 @@ def process_sentiment(card: TarotCard, im: Image) -> Image:
         return posterize(7, im)
 
 # TODO pass in drawn card, then only return image
-def generate() -> Image:
+def _generate() -> Image:
     flickr = FlickrAPI(sec.FLICKR_KEY, sec.FLICKR_SECRET, format='parsed-json')
     card = draw_tarot_card()
     if card.inverted:
@@ -325,4 +326,19 @@ def generate() -> Image:
     im = im.convert('RGB')
     im = second_post_distort(im)
 
+    # TODO fix this next
     return (im, card)
+
+# TODO fix this next
+def generate() -> Image:
+    im = None
+    while im == None:
+        try:
+            im = _generate()
+        except TinyImageException:
+            print('ignoring bad image')
+            continue
+        except Exception as e:
+            print('whoa there bud', e)
+            break
+    return im
