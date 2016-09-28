@@ -271,9 +271,9 @@ def process_sentiment(card: TarotCard, im: Image) -> Image:
         return posterize(7, im)
 
 # TODO pass in drawn card, then only return image
-def _generate() -> Image:
+def _generate(card:TarotCard) -> Image:
     flickr = FlickrAPI(sec.FLICKR_KEY, sec.FLICKR_SECRET, format='parsed-json')
-    card = draw_tarot_card()
+
     if card.inverted:
         print('drew inverted', card)
     else:
@@ -326,15 +326,14 @@ def _generate() -> Image:
     im = im.convert('RGB')
     im = second_post_distort(im)
 
-    # TODO fix this next
-    return (im, card)
+    return im
 
 # TODO fix this next
-def generate() -> Image:
+def generate(card:TarotCard) -> Image:
     im = None
     while im == None:
         try:
-            im = _generate()
+            im = _generate(card)
         except TinyImageException:
             print('ignoring bad image')
             continue

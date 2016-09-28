@@ -14,6 +14,7 @@ from . import secrets as sec
 from . import twitter
 from .images import generate
 from .tasks import handle_reply
+from .cards import draw_tarot_card
 
 DEBUG_IMAGE_PATH = '/tmp/tarot.jpg'
 MENTION_CHECK_INTERVAL = 90 # seconds
@@ -76,15 +77,16 @@ def main():
         else:
             print("'loop' not specified so just running once.")
 
+    card = draw_tarot_card()
     if debug:
-        im, _ = generate()
+        im = generate(card)
         print('saving to', DEBUG_IMAGE_PATH)
         im.save(DEBUG_IMAGE_PATH)
         sys.exit(0)
 
 
     if not looping:
-        im, card = generate()
+        im = generate(card)
         twitter_client = twitter.get_client()
         print('updating twitter...')
         twitter.post_image(twitter_client, card.name, im)
