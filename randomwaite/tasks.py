@@ -14,5 +14,5 @@ def handle_reply(status_id: str, username: str) -> None:
     card = draw_tarot_card()
     im = generate(card)
     print('GOT IMAGE')
-    text = "@{} {}".format(username, card.name)
+    text = "@{} {}".format(username, card.name.lower())
     post_image(twitter_client, text, im, reply_to_status_id=status_id)

@@ -1,5 +1,4 @@
 # TODO emoji suites
-# TODO twitter responding / celery queue
 # TODO logging
 import re
 import sys
@@ -55,8 +54,20 @@ def mention_loop() -> None:
         print('done, sleeping...')
         sleep(MENTION_CHECK_INTERVAL)
 
-def post_loop() -> None:
-    pass
+def generation_loop() -> None:
+    print('starting generation loop...')
+    twitter_client = twitter.get_client()
+
+    while True:
+        print('wakin up to tweet')
+        card = draw_tarot_card()
+        im = generate(card)
+
+        twitter.post_image(twitter_client, card.name.lower(), im)
+
+        print('tweeted, going back to sleep')
+
+        sleep(GENERATION_INTERVAL)
 
 def main():
     looping = False
@@ -89,13 +100,14 @@ def main():
         im = generate(card)
         twitter_client = twitter.get_client()
         print('updating twitter...')
-        twitter.post_image(twitter_client, card.name, im)
+        twitter.post_image(twitter_client, card.name.lower(), im)
         sys.exit(0)
 
-    replies_loop = Process(target=mention_loop)
-    replies_loop.start()
+    mention_looper = Process(target=mention_loop)
+    mention_looper.start()
 
-    # TODO start 4 hour loop to generate card
+    generation_looper = Process(target=generation_loop)
+    generation_looper.start()
 
-    replies_loop.join()
-
+    replies_looper.join()
+    generation_looper.join()
