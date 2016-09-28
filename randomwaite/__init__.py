@@ -1,6 +1,3 @@
-# TODO deal with loss of randomness
-# TODO reversed/inversed cards
-# TODO sentiment analysis of search words
 # TODO emoji suites
 # TODO twitter responding / celery queue
 
@@ -24,24 +21,6 @@ from .cards import TarotCard, draw_tarot_card
 from .flickr import get_photo
 from .sentiment import POSITIVE, NEGATIVE
 
-
-"""
-
-negative sentiment:
- 1 delete a color band
- 2 grayscale
- 3 posterize
-
-neutral sentiment:
- 1 posterize slightly
-
-positive sentiment:
- 1 increase brightness
- 2 maxfilter
-
-"""
-
-
 DEBUG = True
 R = 0
 G = 1
@@ -50,20 +29,23 @@ CARD_WIDTH = 385
 CARD_HEIGHT = 666
 ZOOM_CHANCE = .25
 FONT_PATH = path.join(path.dirname(__file__), 'fonts')
+# repeats == increased likelihood
 FONTS = [
     'alegreya.ttf',
     'antic_didone.ttf',
-    'Cinzel.ttf',
+    'cinzel.ttf',
     'juliussans.ttf',
     'oswald.ttf',
     'vcr.ttf',
     'amatica.ttf',
     'bree.ttf',
+    'vcr.ttf',
     'cormorant_infant.ttf',
     'imfell.ttf',
     'lobster.ttf',
     'palanquin.ttf',
     'vt323.ttf',
+    'vcr.ttf',
     'amethysta.ttf',
     'cantata.ttf',
     'cutive.ttf',
@@ -162,7 +144,7 @@ def place_title(card: TarotCard, im: Image) -> Image:
     align = choice(TITLE_ALIGNS)
     im = im.convert('RGBA')
     font_path = get_font_path()
-    print('USING FONT, font_path')
+    print('USING FONT', font_path)
     fnt = ImageFont.truetype(font_path, TITLE_SIZES[size])
     txt = Image.new('RGBA', im.size, (0,0,0,0))
     d = ImageDraw.Draw(txt)
@@ -300,16 +282,7 @@ def process_sentiment(card: TarotCard, im: Image) -> Image:
     else:
         return posterize(7, im)
 
-def main():
-    flickr = FlickrAPI(sec.FLICKR_KEY, sec.FLICKR_SECRET, format='parsed-json')
-    twitter_auth = tweepy.OAuthHandler(sec.TWITTER_KEY, sec.TWITTER_SECRET)
-    twitter_auth.set_access_token(sec.TWITTER_ACCESS_TOKEN, sec.TWITTER_ACCESS_SECRET)
-    twitter = tweepy.API(twitter_auth)
-
-    if len(sys.argv) > 1 and sys.argv[1] == 'authenticate':
-        print('authenticating...')
-        flickr.authenticate_via_browser(perms='read')
-
+def generate(flickr: FlickrAPI) -> Image:
     card = draw_tarot_card()
     if card.inverted:
         print('drew inverted', card)
@@ -362,6 +335,21 @@ def main():
     im = first_post_distort(im)
     im = im.convert('RGB')
     im = second_post_distort(im)
+
+    return im
+
+def main():
+    flickr = FlickrAPI(sec.FLICKR_KEY, sec.FLICKR_SECRET, format='parsed-json')
+    twitter_auth = tweepy.OAuthHandler(sec.TWITTER_KEY, sec.TWITTER_SECRET)
+    twitter_auth.set_access_token(sec.TWITTER_ACCESS_TOKEN, sec.TWITTER_ACCESS_SECRET)
+    twitter = tweepy.API(twitter_auth)
+
+    if len(sys.argv) > 1 and sys.argv[1] == 'authenticate':
+        print('authenticating...')
+        flickr.authenticate_via_browser(perms='read')
+
+
+    im = generate(flickr)
 
     if not DEBUG:
         print('updating twitter...')
