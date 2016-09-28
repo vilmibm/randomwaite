@@ -1,18 +1,61 @@
 # TODO emoji suites
 # TODO twitter responding / celery queue
 # TODO logging
-import multiprocessing
+import re
 import sys
 from io import BytesIO
+from multiprocessing import Process
+from time import sleep
 
 from flickrapi.core import FlickrAPI
+from redis import Redis
 
 from . import secrets as sec
+from . import twitter
 from .images import generate
-from .twitter import post_image
 from .tasks import handle_reply
 
 DEBUG_IMAGE_PATH = '/tmp/tarot.jpg'
+MENTION_CHECK_INTERVAL = 90 # seconds
+GENERATION_INTERVAL = 60 * 60 * 4 # seconds
+SINCE_KEY = 'tarot_mentions_since_id'
+RESPOND_TEXT = 'draw me a card'
+
+should_respond_re = re.compile(RESPOND_TEXT)
+
+def should_respond(text: str) -> bool:
+    return should_respond_re.search(text)
+
+def mention_loop() -> None:
+    print('starting mentions listener...')
+    redis = Redis()
+    twitter_client = twitter.get_client()
+
+    while True:
+        since_id = redis.get(SINCE_KEY)
+        mentions = twitter.get_mentions(twitter_client, since_id)
+        if len(mentions) > 0:
+            print('found some mentions')
+        else:
+            print('found no mentions')
+
+        for mention in mentions:
+            if not should_respond(mention.text):
+                print('found mention but it is not for responding to')
+                continue
+            username = mention.author.screen_name
+            status_id = mention.id_str
+            handle_reply.delay(status_id, username)
+
+        if len(mentions) > 0 and mentions[0].id_str != since_id:
+            print('updated since_id in redis')
+            redis.set(SINCE_KEY, mentions[0].id_str)
+
+        print('done, sleeping...')
+        sleep(MENTION_CHECK_INTERVAL)
+
+def post_loop() -> None:
+    pass
 
 def main():
     looping = False
@@ -39,14 +82,18 @@ def main():
         im.save(DEBUG_IMAGE_PATH)
         sys.exit(0)
 
-    im, card = generate()
-    print('updating twitter...')
-    post_image(card.name, im)
 
     if not looping:
+        im, card = generate()
+        twitter_client = twitter.get_client()
+        print('updating twitter...')
+        twitter.post_image(twitter_client, card.name, im)
         sys.exit(0)
 
+    replies_loop = Process(target=mention_loop)
+    replies_loop.start()
 
-    # TODO start 90sec loop to check for replies
     # TODO start 4 hour loop to generate card
+
+    replies_loop.join()
 
