@@ -1,3 +1,4 @@
+import logging
 import math
 import re
 import typing as t
@@ -5,6 +6,7 @@ from enum import Enum
 from functools import partial
 from os import path
 from random import choice, random, randrange, randint
+from time import sleep
 
 from flickrapi.core import FlickrAPI
 from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageFilter, ImageEnhance
@@ -15,6 +17,8 @@ from .cards import TarotCard, draw_tarot_card
 from .flickr import get_photo
 from .sentiment import POSITIVE, NEGATIVE
 from .errors import TinyImageException
+
+logger = logging.getLogger('randomwaite')
 
 R = 0
 G = 1
@@ -31,18 +35,21 @@ FONTS = [
     'juliussans.ttf',
     'oswald.ttf',
     'vcr.ttf',
+    'vcr.ttf',
     'amatica.ttf',
     'bree.ttf',
     'vcr.ttf',
     'cormorant_infant.ttf',
     'imfell.ttf',
     'lobster.ttf',
+    'vcr.ttf',
     'palanquin.ttf',
     'vt323.ttf',
     'vcr.ttf',
     'amethysta.ttf',
     'cantata.ttf',
     'cutive.ttf',
+    'imfell.ttf',
     'jacques.ttf',
     'nothing.ttf',
     'tangerine.ttf',
@@ -82,11 +89,6 @@ def random_crop(original: Image) -> Image:
     min_y0 = 0
     max_y0 = original.height - CARD_HEIGHT
 
-    print('min x0', min_x0)
-    print('max x0', max_x0)
-    print('min y0', min_y0)
-    print('max y0', max_y0)
-
     if max_y0 <= 0 or max_x0 <= 0:
         raise TinyImageException()
 
@@ -95,7 +97,7 @@ def random_crop(original: Image) -> Image:
     x1 = x0 + CARD_WIDTH
     y1 = y0 + CARD_HEIGHT
 
-    print('CROPPING AT {}, {}, {}, {}'.format(x0, y0, x1, y1))
+    logger.debug('CROPPING AT {}, {}, {}, {}'.format(x0, y0, x1, y1))
 
     return original.crop((x0, y0, x1, y1))
 
@@ -105,7 +107,7 @@ def maybe_zoom(original: Image) -> Image:
     new_width = math.floor(original.width * zoom_level)
     new_height = math.floor(original.height * zoom_level)
 
-    print('ZOOMING AT', zoom_level)
+    logger.debug('ZOOMING AT %s', zoom_level)
 
     resized = original.resize((new_width, new_height))
 
@@ -129,14 +131,11 @@ def place_title(card: TarotCard, im: Image) -> Image:
     align = choice(TITLE_ALIGNS)
     im = im.convert('RGBA')
     font_path = get_font_path()
-    print('USING FONT', font_path)
+    logger.debug('USING FONT %s', font_path)
     fnt = ImageFont.truetype(font_path, TITLE_SIZES[size])
     txt = Image.new('RGBA', im.size, (0,0,0,0))
     d = ImageDraw.Draw(txt)
-    print(title)
-    print(position)
-    print(size)
-    print(align)
+    logger.debug('title: %s, position: %s, size: %s, align: %s', title, position, size, align)
 
     # ~ * randomness * ~
     if random() < .5:
@@ -168,8 +167,6 @@ def place_title(card: TarotCard, im: Image) -> Image:
         text_y = im.height - text_h
     elif position == TitlePlacement.random:
         text_y = randrange(0, (im.height - text_h))
-
-    print(text_x, text_y, text_w, text_h)
 
     # actual drawing
     d.rectangle((0, text_y, im.width, text_y+text_h+15), fill=(0,0,0,255))
@@ -255,7 +252,7 @@ POST_TITLE_DISTORT = [
 
 def process_sentiment(card: TarotCard, im: Image) -> Image:
     """To be called prior to title placement."""
-    print('PROCESSING A {} SENTIMENT'.format(card.sentiment))
+    logger.debug('PROCESSING A {} SENTIMENT'.format(card.sentiment))
     if card.sentiment == NEGATIVE:
         # first, replace a color band with black
         bands = im.split()
@@ -275,21 +272,21 @@ def _generate(card:TarotCard) -> Image:
     flickr = FlickrAPI(sec.FLICKR_KEY, sec.FLICKR_SECRET, format='parsed-json')
 
     if card.inverted:
-        print('drew inverted', card)
+        logger.debug('drew inverted %s', card)
     else:
-        print('drew', card)
+        logger.debug('drew %s', card)
 
     search_term = card.search_term
 
-    print('searching for', search_term)
+    logger.debug('searching for %s', search_term)
 
     photo = get_photo(flickr, card.search_term)
 
-    print('going to fetch', photo.url)
+    logger.debug('going to fetch %s', photo.url)
 
     original = Image.open(photo.data)
 
-    print('processing image')
+    logger.debug('processing image')
 
     # 1 Pick random section of image to cut card from
     im = random_crop(original)
@@ -300,18 +297,14 @@ def _generate(card:TarotCard) -> Image:
     # 3 modify color balance (based on card)
     im = color_balance(card, im)
 
-    # TODO distort before or after sort_pixels?
     im = process_sentiment(card, im)
 
-    #print('SORTING')
-    #im = sort_pixels(im)
-
     pre_distort = choice(PRE_TITLE_DISTORT)
-    print('PRE-TITLE DISTORTING', im, pre_distort)
+    logger.debug('PRE-TITLE DISTORTING %s %s', im, pre_distort)
     im = im.convert('RGB')
     im = pre_distort(im)
 
-    print('PLACING TITLE')
+    logger.debug('PLACING TITLE')
     im = place_title(card, im)
 
     im = maybe_inverse(card, im)
@@ -320,7 +313,10 @@ def _generate(card:TarotCard) -> Image:
     second_post_distort = choice(POST_TITLE_DISTORT)
     while second_post_distort == first_post_distort:
         second_post_distort = choice(POST_TITLE_DISTORT)
-    print('POST-TITLE DISTORTING', im, first_post_distort, second_post_distort)
+    logger.debug('POST-TITLE DISTORTING %s %s %s',
+                 im,
+                 first_post_distort,
+                 second_post_distort)
     im = im.convert('RGB')
     im = first_post_distort(im)
     im = im.convert('RGB')
@@ -328,16 +324,15 @@ def _generate(card:TarotCard) -> Image:
 
     return im
 
-# TODO fix this next
 def generate(card:TarotCard) -> Image:
     im = None
     while im == None:
         try:
             im = _generate(card)
         except TinyImageException:
-            print('ignoring bad image')
-            continue
+            logger.error('ignoring bad image')
+            sleep(1)
         except Exception as e:
-            print('whoa there bud', e)
-            break
+            logger.critical('whoa there bud: %s', e)
+            sleep(10)
     return im

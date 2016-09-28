@@ -9,10 +9,8 @@ app = Celery('randomwaite.tasks', broker='redis://localhost')
 
 @app.task
 def handle_reply(status_id: str, username: str) -> None:
-    print('IN TASK')
     twitter_client = get_client()
     card = draw_tarot_card()
     im = generate(card)
-    print('GOT IMAGE')
     text = "@{} {}".format(username, card.name.lower())
     post_image(twitter_client, text, im, reply_to_status_id=status_id)

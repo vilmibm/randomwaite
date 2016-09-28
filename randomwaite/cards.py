@@ -1,10 +1,13 @@
 """Defines the TarotCard class and enumerates all of the cards. Exports them
 all in CARDS.
 """
+import logging
 from random import choice, random
 from typing import Tuple
 
 from .sentiment import Sentiment, NEGATIVE, POSITIVE, NEUTRAL
+
+logger = logging.getLogger('randomwaite')
 
 INVERSE_CHANCE = .1
 
@@ -36,7 +39,7 @@ class TarotCard:
 def draw_tarot_card() -> TarotCard:
     card = TarotCard(**choice(CARD_DATA))
     if random() < INVERSE_CHANCE:
-        print("inverting card...")
+        logger.debug("inverting card...")
         card.invert()
 
     return card

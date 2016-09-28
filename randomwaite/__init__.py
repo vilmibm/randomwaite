@@ -1,8 +1,9 @@
 # TODO emoji suites
-# TODO logging
+import logging
 import re
 import sys
 from io import BytesIO
+from logging.handlers import RotatingFileHandler
 from multiprocessing import Process
 from time import sleep
 
@@ -16,18 +17,34 @@ from .tasks import handle_reply
 from .cards import draw_tarot_card
 
 DEBUG_IMAGE_PATH = '/tmp/tarot.jpg'
-MENTION_CHECK_INTERVAL = 90 # seconds
+MENTION_CHECK_INTERVAL = 70 # seconds
 GENERATION_INTERVAL = 60 * 60 * 4 # seconds
 SINCE_KEY = 'tarot_mentions_since_id'
 RESPOND_TEXT = 'draw me a card'
 
 should_respond_re = re.compile(RESPOND_TEXT)
 
+LOG_FILE = '/tmp/randomwaite.log'
+MENTIONS_LOG_FILE = '/tmp/randomwaite.mentions.log'
+GENERATION_LOG_FILE = '/tmp/randomwaite.generation.log'
+LOG_MAXSIZE = 1000 * 2 # 2 mb
+LOG_BACKUP_COUNT = 5
+
+logger = logging.getLogger('randomwaite')
+
+def init_logger(logger: logging.Logger, filename: str) -> None:
+    logger.addHandler(RotatingFileHandler(filename, maxBytes=LOG_MAXSIZE, backupCount=LOG_BACKUP_COUNT))
+    logger.setLevel(logging.DEBUG)
+
+init_logger(logger, LOG_FILE)
+
 def should_respond(text: str) -> bool:
     return should_respond_re.search(text)
 
 def mention_loop() -> None:
-    print('starting mentions listener...')
+    logger = logging.getLogger('randomwaite.mentions')
+    init_logger(logger, MENTIONS_LOG_FILE)
+    logger.debug('starting mentions listener...')
     redis = Redis()
     twitter_client = twitter.get_client()
 
@@ -35,37 +52,39 @@ def mention_loop() -> None:
         since_id = redis.get(SINCE_KEY)
         mentions = twitter.get_mentions(twitter_client, since_id)
         if len(mentions) > 0:
-            print('found some mentions')
+            logger.debug('found some mentions')
         else:
-            print('found no mentions')
+            logger.debug('found no mentions')
 
         for mention in mentions:
             if not should_respond(mention.text):
-                print('found mention but it is not for responding to')
+                logger.debug('found mention but it is not for responding to')
                 continue
             username = mention.author.screen_name
             status_id = mention.id_str
             handle_reply.delay(status_id, username)
 
         if len(mentions) > 0 and mentions[0].id_str != since_id:
-            print('updated since_id in redis')
+            logger.debug('updated since_id in redis')
             redis.set(SINCE_KEY, mentions[0].id_str)
 
-        print('done, sleeping...')
+        logger.debug('done, sleeping...')
         sleep(MENTION_CHECK_INTERVAL)
 
 def generation_loop() -> None:
-    print('starting generation loop...')
+    logger = logging.getLogger('randomwaite.generation')
+    init_logger(logger, GENERATION_LOG_FILE)
+    logger.debug('starting generation loop...')
     twitter_client = twitter.get_client()
 
     while True:
-        print('wakin up to tweet')
+        logger.debug('wakin up to tweet')
         card = draw_tarot_card()
         im = generate(card)
 
         twitter.post_image(twitter_client, card.name.lower(), im)
 
-        print('tweeted, going back to sleep')
+        logger.debug('tweeted, going back to sleep')
 
         sleep(GENERATION_INTERVAL)
 
@@ -91,7 +110,7 @@ def main():
     card = draw_tarot_card()
     if debug:
         im = generate(card)
-        print('saving to', DEBUG_IMAGE_PATH)
+        logger.debug('saving to', DEBUG_IMAGE_PATH)
         im.save(DEBUG_IMAGE_PATH)
         sys.exit(0)
 
@@ -99,7 +118,7 @@ def main():
     if not looping:
         im = generate(card)
         twitter_client = twitter.get_client()
-        print('updating twitter...')
+        logger.debug('updating twitter...')
         twitter.post_image(twitter_client, card.name.lower(), im)
         sys.exit(0)
 
@@ -109,5 +128,5 @@ def main():
     generation_looper = Process(target=generation_loop)
     generation_looper.start()
 
-    replies_looper.join()
+    mention_looper.join()
     generation_looper.join()
