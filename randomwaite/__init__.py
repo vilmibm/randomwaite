@@ -40,7 +40,7 @@ def mention_loop() -> None:
         since_id = redis.get(SINCE_KEY)
         mentions = twitter.get_mentions(twitter_client, since_id)
         if len(mentions) > 0:
-            logger.debug('found some mentions')
+            logger.debug('found %s mentions', len(mentions))
         else:
             logger.debug('found no mentions')
 
@@ -53,8 +53,8 @@ def mention_loop() -> None:
             handle_reply.delay(status_id, username)
 
         if len(mentions) > 0 and mentions[0].id_str != since_id:
-            logger.debug('updated since_id in redis')
             redis.set(SINCE_KEY, mentions[0].id_str)
+            logger.debug('updated since_id in redis to %s', mentions[0].id_str)
 
         logger.debug('done, sleeping...')
         sleep(MENTION_CHECK_INTERVAL)

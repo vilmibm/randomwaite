@@ -41,3 +41,12 @@ class TestTwitterRetrier(TestCase):
         self.assertEqual(rt.MAX_RETRIES, len(logger_mock.exception.call_args_list))
         self.assertTrue(sleep_mock.called)
 
+    @patch('randomwaite.twitter.sleep')
+    @patch('randomwaite.twitter.logger')
+    def test_none_result(self, logger_mock, sleep_mock):
+        def fake_twitter_call(x,y):
+            return None
+        under_test = twitter_retry(fake_twitter_call)
+        result = under_test(1,2)
+        self.assertEqual(result, None)
+        self.assertFalse(sleep_mock.called)

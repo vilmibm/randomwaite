@@ -12,6 +12,7 @@ from .logs import get_logger
 
 
 TwitterClient = tweepy.API
+Status = tweepy.models.Status
 
 logger = get_logger()
 
@@ -24,22 +25,19 @@ def twitter_retry(fn):
         tries = 1
         result = None
 
-        while result is None:
-            if tries > MAX_RETRIES:
-                break
-
+        while tries <= MAX_RETRIES:
             try:
                 logger.debug('making a call to twitter...')
-                result = fn(*args, **kwargs)
+                return fn(*args, **kwargs)
             except tweepy.TweepError as e:
                 logger.exception('got an error from twitter')
                 sleep(tries ** DECAY_FACTOR)
+            finally:
                 tries += 1
 
         if result is None:
             raise TwitterMessedUpException('giving up after {} tries'.format(tries))
 
-        return result
     return wrapper
 
 
@@ -49,7 +47,7 @@ def get_client() -> TwitterClient:
     return tweepy.API(twitter_auth)
 
 @twitter_retry
-def get_mentions(client: TwitterClient, since_id: t.Optional[str]):
+def get_mentions(client: TwitterClient, since_id: t.Optional[str]) -> t.List[Status]:
     if since_id:
         return client.mentions_timeline(since_id=since_id)
     else:
