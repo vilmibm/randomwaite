@@ -17,8 +17,9 @@ from .cards import TarotCard, draw_tarot_card
 from .flickr import get_photo
 from .sentiment import POSITIVE, NEGATIVE
 from .errors import TinyImageException
+from .logs import get_logger
 
-logger = logging.getLogger('randomwaite')
+logger = get_logger()
 
 R = 0
 G = 1

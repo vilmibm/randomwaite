@@ -6,8 +6,9 @@ from random import choice, random
 from typing import Tuple
 
 from .sentiment import Sentiment, NEGATIVE, POSITIVE, NEUTRAL
+from .logs import get_logger
 
-logger = logging.getLogger('randomwaite')
+logger = get_logger()
 
 INVERSE_CHANCE = .1
 
