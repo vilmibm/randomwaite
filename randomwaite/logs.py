@@ -15,4 +15,5 @@ def get_logger() -> logging.Logger:
                                           maxBytes=MAXLOGSIZE,
                                           backupCount=BACKUP_COUNT))
     logger.setLevel(logging.DEBUG)
+    return logger
 

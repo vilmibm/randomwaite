@@ -1,35 +1,43 @@
 import typing as t
 from functools import wraps
 from io import BytesIO
+from time import sleep
 
 from PIL import Image
 import tweepy
 
 from . import secrets as sec
+from .errors import TwitterMessedUpException
 from .logs import get_logger
+
 
 TwitterClient = tweepy.API
 
 logger = get_logger()
 
+MAX_RETRIES = 10
+DECAY_FACTOR = 2
+
 def twitter_retry(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        max_tries = 10
         tries = 1
-        decay_factor = 2
         result = None
 
-        while result is None and tries <= max_tries:
+        while result is None:
+            if tries > MAX_RETRIES:
+                break
+
             try:
+                logger.debug('making a call to twitter...')
                 result = fn(*args, **kwargs)
             except tweepy.TweepError as e:
                 logger.exception('got an error from twitter')
-                sleep(tries ** decay_factor)
+                sleep(tries ** DECAY_FACTOR)
                 tries += 1
 
         if result is None:
-            raise Exception('twitter is seriously ill, giving up after {} tries'.format(tries))
+            raise TwitterMessedUpException('giving up after {} tries'.format(tries))
 
         return result
     return wrapper
@@ -52,6 +60,8 @@ def post_image(client: TwitterClient,
                text: str,
                image: Image,
                reply_to_status_id:str=None) -> None:
+
+    logger.debug('posting an image')
 
     buffer = BytesIO()
     image.save(buffer, format='JPEG')

@@ -97,7 +97,7 @@ def main():
     card = draw_tarot_card()
     if debug:
         im = generate(card)
-        logger.debug('saving to', DEBUG_IMAGE_PATH)
+        logger.debug('saving to %s', DEBUG_IMAGE_PATH)
         im.save(DEBUG_IMAGE_PATH)
         sys.exit(0)
 
